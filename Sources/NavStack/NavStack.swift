@@ -1,6 +1,7 @@
 
 import SwiftUI
 
+
 final public class CustomNavStackViewModel: ObservableObject {
     
     var navigationType: NavType = .push
@@ -13,45 +14,44 @@ final public class CustomNavStackViewModel: ObservableObject {
         }
     }
     
-    
-    // MARK: - API
-    
     func push <S: View> (_ screen: S) {
-        navigationType = .push
-        let screen = Screen(id: UUID().uuidString, nextScreen: AnyView(screen))
-        screenStack.push(screen)
+        withAnimation(.easeInOut) {
+            let screen = Screen(id: UUID().uuidString, nextScreen: AnyView(screen))
+            screenStack.push(screen)
+        }
     }
     
     func pop(to: PopDestination = .previous) {
-        navigationType = .pop
-        switch to {
-            case .previous:
-                screenStack.popToPreview()
-            case .root:
-                screenStack.popToRoot()
+        withAnimation(.easeInOut) {
+            switch to {
+                case .previous:
+                    screenStack.popToPreview()
+                case .root:
+                    screenStack.popToRoot()
+            }
         }
     }
 }
 
 public struct NavStack <Content>: View where Content: View {
-     
+    
     @StateObject private var viewModel: CustomNavStackViewModel = .init()
     private let content: Content
     
-    init(@ViewBuilder content: @escaping () -> Content ) {
-        
+    public init(@ViewBuilder content: @escaping () -> Content ) {
         self.content = content()
     }
-      
     
     public var body: some View {
         let isRoot = viewModel.current == nil
         return ZStack {
             if isRoot {
                 content
+                    .transition(.move(edge: .leading))
                     .environmentObject(viewModel)
             } else {
                 viewModel.current!.nextScreen
+                    .transition(.move(edge: .trailing))
                     .environmentObject(viewModel)
             }
         }
@@ -59,9 +59,66 @@ public struct NavStack <Content>: View where Content: View {
     
 }
 
-// MARK: - ENUMS
+public struct NavPushButton <Content, Destination>: View where Content: View, Destination: View {
+    @EnvironmentObject private var viewModel : CustomNavStackViewModel
+    
+    private let destination: Destination
+    private let content: Content
+    
+    public init(destination: Destination, @ViewBuilder content: @escaping () -> Content) {
+        
+        self.destination = destination
+        
+        self.content = content()
+        
+    }
+    
+    public var body: some View {
+        withAnimation {
+            content
+                
+                .onTapGesture {
+                        push()
+                        
+                        
+                }.transition(.scale)
+        }
+       
+    }
+    
+    private func push() {
+        viewModel.push( NavView(content: destination, tabbarColor: .blue) )
+        
+    }
+    
+}
 
-enum NavTransition {
+public struct NavPopButton <Content>: View where Content: View {
+    @EnvironmentObject private var viewModel : CustomNavStackViewModel
+    
+    private let destination: PopDestination
+    private let content: Content
+    
+    public init(destination: PopDestination, @ViewBuilder content: @escaping () -> Content) {
+        self.destination = destination
+        self.content = content()
+    }
+    
+    public var body: some View {
+        content.onTapGesture {
+            pop()
+        }
+    }
+    
+    private func pop() {
+        viewModel.pop(to: destination)
+    }
+    
+}
+
+    // MARK: - ENUMS
+
+public enum NavTransition {
     case none
     case custom(AnyTransition)
 }
@@ -72,13 +129,13 @@ enum NavType {
     case byId
 }
 
-enum PopDestination {
+public enum PopDestination {
     case previous
     case root
 }
 
 
-// MARK: - BASE LOGIC
+    // MARK: - BASE LOGIC
 
 private struct Screen: Identifiable, Equatable {
     
@@ -94,7 +151,7 @@ private struct Screen: Identifiable, Equatable {
 private struct ScreenStack{
     
     private var screens: [Screen] = .init()
-     
+    
     func top() -> Screen? {
         screens.last
     }
