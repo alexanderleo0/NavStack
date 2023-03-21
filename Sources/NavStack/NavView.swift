@@ -8,26 +8,26 @@
 import SwiftUI
 
 
-struct NavView <Content: View> : View {
+public struct NavView <Content: View> : View {
     
-    @EnvironmentObject var navVM: CustomNavStackViewModel
+    @EnvironmentObject var navVM: NavStackViewModel
     
     private var content: Content
-    var tabbarColor: Color
+    var tabbarColor: Color = .white
     
-    init(content: Content, tabbarColor: Color) {
+    public init(content: Content, tabbarColor: Color) {
         self.content = content
         self.tabbarColor = tabbarColor
     }
     
-    var body: some View {
+    public var body: some View {
         ZStack {
             VStack{
                 ZStack(alignment: .bottom){
                     tabbarColor
                         .opacity(0.3)
                     HStack {
-                        NavPopButton(destination: .previous) {
+                        NavPopLink(destination: .previous) {
                             HStack{
                                 Image(systemName: "chevron.left")
                                 Text("Back")
@@ -35,7 +35,7 @@ struct NavView <Content: View> : View {
                         }
                         .padding()
                         Spacer()
-                        NavPopButton(destination: .root) {
+                        NavPopLink(destination: .root) {
                             HStack {
                                 Image(systemName: "chevron.up")
                                 Text("Root")
@@ -62,3 +62,15 @@ struct SwiftUIView_Previews: PreviewProvider {
         NavView(content: EmptyView(), tabbarColor: Color.blue)
     }
 }
+
+//extension AnyTransition {
+//    static var iris: AnyTransition {
+////        .modifier(active: <#T##ViewModifier#>, identity: <#T##ViewModifier#>)
+////        .modifier(
+////            active: ClipShapeModifier(shape: ScaledCircle(animatableData: 0)),
+////            identity: ClipShapeModifier(shape: ScaledCircle(animatableData: 1))
+////        )
+//    }
+//}
+
+//struct ScaledCircle: Shape

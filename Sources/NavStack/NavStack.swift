@@ -2,7 +2,7 @@
 import SwiftUI
 
 
-final public class CustomNavStackViewModel: ObservableObject {
+final public class NavStackViewModel: ObservableObject {
     
     var navigationType: NavType = .push
     
@@ -15,9 +15,11 @@ final public class CustomNavStackViewModel: ObservableObject {
     }
     
     func push <S: View> (_ screen: S) {
-        withAnimation(.easeInOut) {
+        withAnimation(.default) {
+            
             let screen = Screen(id: UUID().uuidString, nextScreen: AnyView(screen))
             screenStack.push(screen)
+            
         }
     }
     
@@ -35,7 +37,8 @@ final public class CustomNavStackViewModel: ObservableObject {
 
 public struct NavStack <Content>: View where Content: View {
     
-    @StateObject private var viewModel: CustomNavStackViewModel = .init()
+    @StateObject private var viewModel: NavStackViewModel = .init()
+    
     private let content: Content
     
     public init(@ViewBuilder content: @escaping () -> Content ) {
@@ -44,12 +47,16 @@ public struct NavStack <Content>: View where Content: View {
     
     public var body: some View {
         let isRoot = viewModel.current == nil
-        return ZStack {
+        ZStack {
             if isRoot {
                 content
-                    .transition(.move(edge: .leading))
+//                    .offset(y: 1000)
+//                    .opacity(0)
+//                    .transition(.move(edge: .leading))
                     .environmentObject(viewModel)
             } else {
+                    //                Color.blue
+                    //
                 viewModel.current!.nextScreen
                     .transition(.move(edge: .trailing))
                     .environmentObject(viewModel)
@@ -59,8 +66,8 @@ public struct NavStack <Content>: View where Content: View {
     
 }
 
-public struct NavPushButton <Content, Destination>: View where Content: View, Destination: View {
-    @EnvironmentObject private var viewModel : CustomNavStackViewModel
+public struct NavLink <Content, Destination>: View where Content: View, Destination: View {
+    @EnvironmentObject private var viewModel : NavStackViewModel
     
     private let destination: Destination
     private let content: Content
@@ -74,27 +81,29 @@ public struct NavPushButton <Content, Destination>: View where Content: View, De
     }
     
     public var body: some View {
-        withAnimation {
-            content
+        
+        content
+            
+            .onTapGesture {
                 
-                .onTapGesture {
-                        push()
-                        
-                        
-                }.transition(.scale)
-        }
-       
+                push()
+                
+            }
+        
+        
+        
     }
     
     private func push() {
+            //        viewModel.push(destination)
         viewModel.push( NavView(content: destination, tabbarColor: .blue) )
         
     }
     
 }
 
-public struct NavPopButton <Content>: View where Content: View {
-    @EnvironmentObject private var viewModel : CustomNavStackViewModel
+public struct NavPopLink <Content>: View where Content: View {
+    @EnvironmentObject private var viewModel : NavStackViewModel
     
     private let destination: PopDestination
     private let content: Content
