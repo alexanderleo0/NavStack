@@ -3,9 +3,6 @@ import SwiftUI
 
 
 final public class NavStackViewModel: ObservableObject {
-    
-    var navigationType: NavType = .push
-    
     @Published fileprivate var current : Screen?
     
     private var screenStack = ScreenStack() {
@@ -15,11 +12,9 @@ final public class NavStackViewModel: ObservableObject {
     }
     
     func push <S: View> (_ screen: S) {
-        withAnimation(.default) {
-            
+        withAnimation(.easeInOut) {
             let screen = Screen(id: UUID().uuidString, nextScreen: AnyView(screen))
             screenStack.push(screen)
-            
         }
     }
     
@@ -50,15 +45,11 @@ public struct NavStack <Content>: View where Content: View {
         ZStack {
             if isRoot {
                 content
-//                    .offset(y: 1000)
-//                    .opacity(0)
-//                    .transition(.move(edge: .leading))
+                    .transition(.inTrailingOutScale)
                     .environmentObject(viewModel)
             } else {
-                    //                Color.blue
-                    //
-                viewModel.current!.nextScreen
-                    .transition(.move(edge: .trailing))
+                viewModel.current?.nextScreen
+                    .transition(.inTrailingOutScale)
                     .environmentObject(viewModel)
             }
         }
@@ -73,31 +64,20 @@ public struct NavLink <Content, Destination>: View where Content: View, Destinat
     private let content: Content
     
     public init(destination: Destination, @ViewBuilder content: @escaping () -> Content) {
-        
         self.destination = destination
-        
         self.content = content()
         
     }
     
     public var body: some View {
-        
         content
-            
             .onTapGesture {
-                
                 push()
-                
             }
-        
-        
-        
     }
     
     private func push() {
-            //        viewModel.push(destination)
         viewModel.push( NavView(content: destination, tabbarColor: .blue) )
-        
     }
     
 }
@@ -127,17 +107,6 @@ public struct NavPopLink <Content>: View where Content: View {
 
     // MARK: - ENUMS
 
-public enum NavTransition {
-    case none
-    case custom(AnyTransition)
-}
-
-enum NavType {
-    case push
-    case pop
-    case byId
-}
-
 public enum PopDestination {
     case previous
     case root
@@ -161,6 +130,10 @@ private struct ScreenStack{
     
     private var screens: [Screen] = .init()
     
+    func getScreensCount() -> Int {
+        screens.count
+    }
+    
     func top() -> Screen? {
         screens.last
     }
@@ -180,4 +153,8 @@ private struct ScreenStack{
     mutating func popToRoot() {
         screens.removeAll()
     }
+}
+
+extension AnyTransition {
+    
 }
